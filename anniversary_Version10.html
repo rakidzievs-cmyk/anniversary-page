@@ -1,0 +1,304 @@
+<html lang="mk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Нашата Годишнина 💖</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #fff5f7, #fceef5);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      overflow-x: hidden;
+    }
+    .hearts {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .heart {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: rgba(255, 105, 180, 0.6);
+      transform: rotate(45deg);
+      animation: float 6s infinite ease-in;
+    }
+    .heart::before,
+    .heart::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: inherit;
+      border-radius: 50%;
+    }
+    .heart::before {
+      top: -10px;
+      left: 0;
+    }
+    .heart::after {
+      left: -10px;
+      top: 0;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(45deg); opacity: 1; }
+      100% { transform: translateY(-600px) rotate(45deg); opacity: 0; }
+    }
+    .container {
+      background: #fff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 20px rgba(0,0,0,0.1);
+      max-width: 90%;
+      width: 400px;
+      z-index: 1;
+    }
+    button {
+      background: #ff7eb9;
+      border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #ff4e94;
+    }
+    #result {
+      font-size: 20px;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #ff4e94;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none; 
+      position: fixed;
+      z-index: 100;
+      padding-top: 60px;
+      left: 0; top: 0; width: 100%; height: 100%;
+      overflow: auto;
+      background: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background: #fff;
+      margin: auto;
+      padding: 30px 20px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      color: #ff4e94;
+      font-size: 20px;
+      font-weight: bold;
+      position: relative;
+    }
+    .close-btn {
+      position: absolute;
+      top: 10px; right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      color: #888;
+      cursor: pointer;
+    }
+    .close-btn:hover { color: #ff4e94; }
+    .love-infinite {
+      display: block;
+      margin-top: 32px;
+      font-size: 26px;
+      color: #ff4e94;
+      letter-spacing: 2px;
+      font-weight: bold;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1);}
+      50% { transform: scale(1.08);}
+      100% { transform: scale(1);}
+    }
+  </style>
+</head>
+<body>
+  <div class="hearts"></div>
+  <div class="container">
+    <h2 id="intro" style="display: block;">Имам неколку кратки прашања за тебе Љубов моја. На крај имам изненадување за тебе 💖</h2>
+    <div id="quiz">
+      <div id="question" style="display: none;">Кое мило име јас ти го имам дадено?</div>
+      <div id="answers" style="display: none;">
+        <button>Бувче</button>
+        <button>Маче</button>
+        <button>Срничка</button>
+      </div>
+    </div>
+    <div id="result" style="display: none;">Благодарение на твојата љубов, годинава беше најубавата година до сега 💖<br><br>
+        1 години / 24 месеци / 104 недели / 728 дена / 17493 часа / 1049587 минути / 62975225 секунди<br>
+        и јас сè уште сум најсреќниот маж со тебе.
+    </div>
+  </div>
+
+  <!-- Modal for result -->
+  <div id="resultModal" class="modal">
+    <div class="modal-content">
+      <span class="close-btn">&times;</span>
+      <div id="modalResultText"></div>
+      <span class="love-infinite">ТЕ САКАМ ДО БЕСКОНЕЧНО 💖</span>
+    </div>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        // mix up: 14ти Февруари, 1ви Септември (correct), 31ви Декември
+        text: "Кога започна нашата љубов?",
+        answers: ["14ти Февруари", "1ви Септември", "31ви Декември"],
+        correct: 1 // 1ви Септември is still correct
+      },
+      {
+        text: "Кој е мојот сладок прекар?",
+        answers: ["Мече", "Мачор", "Душо"],
+        correct: 0
+      },
+      {
+        // mix up: Срценце, Лепота, Бувче (correct)
+        text: "Кој е твојот сладок прекар?",
+        answers: ["Срценце", "Лепота", "Бувче"],
+        correct: 2 // Бувче is still correct
+      }
+    ];
+
+    let currentQuestion = 0;
+    let introHiddenAfterFirst = false;
+    let timerInterval = null;
+    const intro = document.getElementById("intro");
+    const questionEl = document.getElementById("question");
+    const answersEl = document.getElementById("answers");
+    const resultEl = document.getElementById("result");
+    const startDate = new Date("2024-09-01T00:00:00");
+
+    function showQuestion() {
+      if (currentQuestion >= questions.length) {
+        showResult();
+        return;
+      }
+      questionEl.style.display = "block";
+      answersEl.style.display = "block";
+      questionEl.innerText = questions[currentQuestion].text;
+      answersEl.innerHTML = "";
+      questions[currentQuestion].answers.forEach((answer, i) => {
+        const btn = document.createElement("button");
+        btn.innerText = answer;
+        btn.onclick = () => checkAnswer(i);
+        answersEl.appendChild(btn);
+      });
+      // Show intro only for the first question, hide after the first answer
+      if (currentQuestion === 0 && !introHiddenAfterFirst) {
+        intro.style.display = "block";
+      } else {
+        intro.style.display = "none";
+      }
+    }
+
+    function checkAnswer(i) {
+      if (currentQuestion === 0) {
+        intro.style.display = "none";
+        introHiddenAfterFirst = true;
+      }
+      if (i === questions[currentQuestion].correct) {
+        currentQuestion++;
+        showQuestion();
+      } else {
+        // Reset to first question on wrong answer
+        currentQuestion = 0;
+        introHiddenAfterFirst = false;
+        showQuestion();
+      }
+    }
+
+    // Accurate date difference calculation for years, months, and remaining days
+    function getDateDiffs(startDate, now) {
+      let years = now.getFullYear() - startDate.getFullYear();
+      let months = now.getMonth() - startDate.getMonth();
+      if (now.getDate() < startDate.getDate()) {
+        months--;
+      }
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      // Calculate the last "monthiversary" date
+      let lastMonthDate = new Date(startDate.getFullYear() + years, startDate.getMonth() + months, startDate.getDate());
+      if (now.getDate() < startDate.getDate()) {
+        // lastMonthDate may roll over to previous month
+        lastMonthDate.setMonth(lastMonthDate.getMonth() - 1);
+      }
+      let days = Math.floor((now - lastMonthDate) / (1000 * 60 * 60 * 24));
+
+      const diff = now - startDate;
+      const weeks = Math.floor(diff / (1000*60*60*24*7));
+      const totalDays = Math.floor(diff / (1000*60*60*24));
+      const hours = Math.floor(diff / (1000*60*60));
+      const minutes = Math.floor(diff / (1000*60));
+      const seconds = Math.floor(diff / 1000);
+
+      return { years, months, weeks, days: totalDays, hours, minutes, seconds };
+    }
+
+    function renderModalResult() {
+      const now = new Date();
+      const { years, months, weeks, days, hours, minutes, seconds } = getDateDiffs(startDate, now);
+      const resultHtml = `Благодарение на твојата љубов, годинава беше најубавата година до сега 💖<br><br>
+        ${years} години / ${months} месеци / ${weeks} недели / ${days} дена / ${hours} часа / ${minutes} минути / ${seconds} секунди<br>
+        и јас сè уште сум најсреќниот маж со тебе.`;
+      document.getElementById('modalResultText').innerHTML = resultHtml;
+    }
+
+    function showResult() {
+      questionEl.style.display = "none";
+      answersEl.style.display = "none";
+      renderModalResult();
+      document.getElementById('resultModal').style.display = 'block';
+      // Start live timer
+      timerInterval = setInterval(renderModalResult, 1000);
+    }
+
+    // Modal close logic
+    document.querySelector('.close-btn').onclick = function() {
+      document.getElementById('resultModal').style.display = 'none';
+      if (timerInterval) clearInterval(timerInterval);
+    };
+    window.onclick = function(event) {
+      if (event.target == document.getElementById('resultModal')) {
+        document.getElementById('resultModal').style.display = 'none';
+        if (timerInterval) clearInterval(timerInterval);
+      }
+    };
+
+    // floating hearts generator
+    function createHeart() {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.animationDuration = (3 + Math.random() * 3) + "s";
+      document.querySelector(".hearts").appendChild(heart);
+      setTimeout(() => heart.remove(), 6000);
+    }
+    setInterval(createHeart, 500);
+
+    showQuestion();
+  </script>
+</body>
+</html>
